@@ -254,6 +254,10 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ onComplete }) => {
         customer = await customerService.create(customerPayload);
       }
 
+      if (!customer?.id) {
+        throw new Error('Customer ID missing after save');
+      }
+
       // 2) Reservation
       const reservationPayload: any = {
         customer_id: customer.id,
@@ -271,12 +275,14 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ onComplete }) => {
         status: 'upcoming',
         excel_updated: false
       };
+      console.log('Reservation payload:', reservationPayload);
       await reservationService.create(reservationPayload);
 
       onComplete?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Booking creation failed:', error);
-      setSaveError('Αποτυχία δημιουργίας κράτησης. Παρακαλώ δοκιμάστε ξανά.');
+      const msg = error?.message || error?.error_description || JSON.stringify(error);
+      setSaveError(`Αποτυχία: ${msg}`);
     } finally {
       setSaving(false);
     }

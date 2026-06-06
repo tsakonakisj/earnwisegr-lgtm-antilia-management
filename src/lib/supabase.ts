@@ -1,19 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = 'https://qlmmbudwpttjtsslrvqm.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsbW1idWR3cHR0anRzc2xydnFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxOTI3ODEsImV4cCI6MjA5Mzc2ODc4MX0.gAb_osLSuySNRvizE-lCQf6t527Hd3UWtPVl-kCU6xg';
 
-// Check if we have valid Supabase credentials
-const hasValidSupabaseConfig = supabaseUrl && 
-  supabaseAnonKey && 
-  supabaseUrl !== 'your_supabase_url' &&
-  supabaseAnonKey !== 'your_supabase_anon_key' &&
-  (supabaseUrl.startsWith('https://') || supabaseUrl.startsWith('http://'));
-
-// Only create Supabase client if we have valid configuration
-export const supabase = hasValidSupabaseConfig 
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
-
-// Export a flag to check if we're in demo mode
-export const isDemoMode = !hasValidSupabaseConfig;
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const isDemoMode = false;

@@ -25,7 +25,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 function AppContent() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showBookingWizard, setShowBookingWizard] = useState(false);
   const [showCheckOut, setShowCheckOut] = useState(false);

@@ -46,15 +46,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       } catch (error) {
         console.error('Auth check failed:', error);
-        // Fallback to demo user for development
-        const demoUser: User = {
-          id: '1',
-          email: company.demoEmail,
-          role: 'manager',
-          name: 'Demo User',
-          created_at: new Date().toISOString()
-        };
-        setUser(demoUser);
+        setUser(null);
       }
       setLoading(false);
     };
@@ -106,19 +98,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     } catch (error) {
       console.error('Login failed:', error);
-      // For demo purposes, allow demo login
-      if (email === company.demoEmail && password === company.demoPassword) {
-        const demoUser: User = {
-          id: '1',
-          email,
-          role: 'manager',
-          name: 'Demo User',
-          created_at: new Date().toISOString()
-        };
-        setUser(demoUser);
-      } else {
-        throw error;
-      }
+      throw error;
     }
   };
 

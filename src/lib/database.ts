@@ -232,10 +232,10 @@ export const reservationService = {
       .from('reservations')
       .select(`
         *,
-        customer:customers!customer_id(*),
-        vehicle:vehicles!vehicle_id(*),
-        pickup_station:stations!pickup_station_id(name, name_en),
-        return_station:stations!return_station_id(name, name_en)
+        customer:customers!reservations_customer_id_fkey(*),
+        vehicle:vehicles!reservations_vehicle_id_fkey(*),
+        pickup_station:stations!reservations_pickup_station_id_fkey(name, name_en),
+        return_station:stations!reservations_return_station_id_fkey(name, name_en)
       `)
       .order('pickup_date', { ascending: false });
 

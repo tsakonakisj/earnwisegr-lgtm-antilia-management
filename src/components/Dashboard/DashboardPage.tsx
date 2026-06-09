@@ -86,10 +86,10 @@ const DashboardPage: React.FC = () => {
         .from('reservations')
         .select(`
           id, status, total_amount, pickup_date, return_date,
-          customer:customers!customer_id(name, source),
-          vehicle:vehicles!vehicle_id(plate, brand, model),
-          pickup_station:stations!pickup_station_id(name),
-          return_station:stations!return_station_id(name)
+          customer:customers!reservations_customer_id_fkey(name, source),
+          vehicle:vehicles!reservations_vehicle_id_fkey(plate, brand, model),
+          pickup_station:stations!reservations_pickup_station_id_fkey(name),
+          return_station:stations!reservations_return_station_id_fkey(name)
         `);
 
       if (resError) {

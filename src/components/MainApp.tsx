@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { reservationService, vehicleService } from '../lib/database';
+import { reservationService, vehicleService, checkoutService, checkinService } from '../lib/database';
 import LoginForm from './Login/LoginForm';
 import Header from './Layout/Header';
 import Sidebar from './Layout/Sidebar';
@@ -63,12 +63,22 @@ const MainApp: React.FC = () => {
     setCheckInReservation(reservationId);
   };
 
-  const handleCheckOutComplete = async (_data: any) => {
+  const handleCheckOutComplete = async (data: any) => {
     if (!checkOutReservation) return;
     try {
       const allReservations = await reservationService.getAll();
       const reservation = allReservations.find((r: any) => r.id === checkOutReservation);
       if (!reservation) throw new Error('Reservation not found');
+
+      // Αποθήκευση checkout δεδομένων στη βάση
+      await checkoutService.create({
+        reservation_id: checkOutReservation,
+        fuel_level: data.fuel_level,
+        odometer: data.odometer,
+        accessories_given: data.accessories_given,
+        damages: data.damages,
+        checked_out_by: user?.id,
+      });
 
       await reservationService.update(checkOutReservation, { status: 'active' });
 
@@ -84,12 +94,22 @@ const MainApp: React.FC = () => {
     }
   };
 
-  const handleCheckInComplete = async (_data: any) => {
+  const handleCheckInComplete = async (data: any) => {
     if (!checkInReservation) return;
     try {
       const allReservations = await reservationService.getAll();
       const reservation = allReservations.find((r: any) => r.id === checkInReservation);
       if (!reservation) throw new Error('Reservation not found');
+
+      // Αποθήκευση checkin δεδομένων στη βάση
+      await checkinService.create({
+        reservation_id: checkInReservation,
+        fuel_level: data.fuel_level,
+        odometer: data.odometer,
+        new_damages: data.new_damages,
+        additional_charges: data.additional_charges,
+        checked_in_by: user?.id,
+      });
 
       await reservationService.update(checkInReservation, { status: 'completed' });
 

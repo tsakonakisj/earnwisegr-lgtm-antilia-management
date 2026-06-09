@@ -82,15 +82,19 @@ const DashboardPage: React.FC = () => {
       const today = new Date().toISOString().split('T')[0];
 
       // Fetch reservations with customer source
-      const { data: reservations } = await supabase
+      const { data: reservations, error: resError } = await supabase
         .from('reservations')
         .select(`
           id, status, total_amount, pickup_date, return_date,
-          customer:customers(name, source),
-          vehicle:vehicles(plate, brand, model),
-          pickup_station:pickup_station_id(name),
-          return_station:return_station_id(name)
+          customer:customers!customer_id(name, source),
+          vehicle:vehicles!vehicle_id(plate, brand, model),
+          pickup_station:stations!pickup_station_id(name),
+          return_station:stations!return_station_id(name)
         `);
+
+      if (resError) {
+        console.error('Reservations query error:', resError);
+      }
 
       // Fetch vehicles
       const { data: vehicles } = await supabase

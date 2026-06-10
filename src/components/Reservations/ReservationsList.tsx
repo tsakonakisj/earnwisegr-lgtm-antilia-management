@@ -115,6 +115,7 @@ function getSeasonalInsuranceRate(pickupDate: string): number {
 }
 
 const ReservationsList: React.FC<ReservationsListProps> = ({ onCheckOut, onCheckIn, refreshTrigger }) => {
+  console.log('[DEBUG] ReservationsList props:', { onCheckOut: typeof onCheckOut, onCheckIn: typeof onCheckIn });
   const [reservations, setReservations] = useState<ReservationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

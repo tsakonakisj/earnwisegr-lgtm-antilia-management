@@ -209,6 +209,7 @@ const MainApp: React.FC = () => {
                 {t('newBooking')}
               </button>
             </div>
+            {console.log('[DEBUG] Rendering ReservationsList with:', { handleCheckOut: typeof handleCheckOut })}
             <ReservationsList onCheckOut={handleCheckOut} onCheckIn={handleCheckIn} refreshTrigger={reservationRefresh} />
           </div>
         );

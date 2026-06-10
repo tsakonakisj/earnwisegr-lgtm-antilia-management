@@ -114,7 +114,7 @@ function getSeasonalInsuranceRate(pickupDate: string): number {
   return 10;
 }
 
-const ReservationsList: React.FC<ReservationsListProps> = ({ refreshTrigger }) => {
+const ReservationsList: React.FC<ReservationsListProps> = ({ onCheckOut, onCheckIn, refreshTrigger }) => {
   const [reservations, setReservations] = useState<ReservationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -208,6 +208,10 @@ const ReservationsList: React.FC<ReservationsListProps> = ({ refreshTrigger }) =
   };
 
   const handleCheckInClick = (reservation: ReservationRow) => {
+    if (onCheckIn) {
+      onCheckIn(reservation.id);
+      return;
+    }
     const returnTime = new Date(reservation.return_date).getTime();
     const now = Date.now();
     if (now < returnTime) {
@@ -626,7 +630,7 @@ const ReservationsList: React.FC<ReservationsListProps> = ({ refreshTrigger }) =
                     const canCheckOut = pickupTime <= now;
                     return canCheckOut ? (
                       <button
-                        onClick={() => handleDirectCheckOut(reservation.id, reservation.vehicle_id)}
+                        onClick={() => onCheckOut ? onCheckOut(reservation.id) : handleDirectCheckOut(reservation.id, reservation.vehicle_id)}
                         disabled={checkingOut === reservation.id}
                         className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors"
                       >

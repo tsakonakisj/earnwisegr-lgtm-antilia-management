@@ -630,7 +630,7 @@ const ReservationsList: React.FC<ReservationsListProps> = ({ onCheckOut, onCheck
                     const canCheckOut = pickupTime <= now;
                     return canCheckOut ? (
                       <button
-                        onClick={() => onCheckOut ? onCheckOut(reservation.id) : handleDirectCheckOut(reservation.id, reservation.vehicle_id)}
+                        onClick={() => { alert('checkout clicked - onCheckOut exists: ' + !!onCheckOut); onCheckOut ? onCheckOut(reservation.id) : handleDirectCheckOut(reservation.id, reservation.vehicle_id); }}
                         disabled={checkingOut === reservation.id}
                         className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors"
                       >

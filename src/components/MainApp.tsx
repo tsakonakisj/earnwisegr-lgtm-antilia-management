@@ -209,7 +209,11 @@ const MainApp: React.FC = () => {
                 {t('newBooking')}
               </button>
             </div>
-            <ReservationsList onCheckOut={handleCheckOut} onCheckIn={handleCheckIn} refreshTrigger={reservationRefresh} />
+            <ReservationsList
+              onCheckOut={(id) => { alert('MAINAPP WORKS: ' + id); }}
+              onCheckIn={handleCheckIn}
+              refreshTrigger={reservationRefresh}
+            />
           </div>
         );
       case 'customers':

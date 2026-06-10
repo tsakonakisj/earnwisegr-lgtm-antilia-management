@@ -12,6 +12,7 @@ import {
   PencilSquareIcon
 } from '@heroicons/react/24/outline';
 import ContractGenerator from '../PDF/ContractGenerator';
+import CheckOutForm from '../CheckOut/CheckOutForm';
 import type { Station, Vehicle, Pricing, Reservation } from '../../types';
 
 interface ReservationRow {
@@ -129,6 +130,7 @@ const ReservationsList: React.FC<ReservationsListProps> = ({ onCheckOut, onCheck
   const [checkingIn, setCheckingIn] = useState<string | null>(null);
   const [earlyReturnConfirm, setEarlyReturnConfirm] = useState<ReservationRow | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [checkoutReservationId, setCheckoutReservationId] = useState<string | null>(null);
 
   // Edit mode
   const [editing, setEditing] = useState(false);
@@ -454,6 +456,16 @@ const ReservationsList: React.FC<ReservationsListProps> = ({ onCheckOut, onCheck
 
   return (
     <div className="space-y-6">
+      {checkoutReservationId && (
+        <CheckOutForm
+          reservationId={checkoutReservationId}
+          onComplete={() => {
+            setCheckoutReservationId(null);
+            fetchReservations();
+          }}
+          onCancel={() => setCheckoutReservationId(null)}
+        />
+      )}
       {actionError && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
           {actionError}
@@ -630,7 +642,7 @@ const ReservationsList: React.FC<ReservationsListProps> = ({ onCheckOut, onCheck
                     const canCheckOut = pickupTime <= now;
                     return canCheckOut ? (
                       <button
-                        onClick={() => { alert('checkout clicked - onCheckOut exists: ' + !!onCheckOut); onCheckOut ? onCheckOut(reservation.id) : handleDirectCheckOut(reservation.id, reservation.vehicle_id); }}
+                        onClick={() => setCheckoutReservationId(reservation.id)}
                         disabled={checkingOut === reservation.id}
                         className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors"
                       >

@@ -42,36 +42,47 @@ interface ContractGeneratorProps {
   data: ContractData;
 }
 
-let cachedFontBase64: string | null = null;
-let fontLoadFailed = false;
+interface FontCache {
+  regular: string;
+  bold: string;
+}
+let cachedFonts: FontCache | null = null;
+let fontCacheFailed = false;
 
-async function loadUnicodeFont(): Promise<string | null> {
-  if (fontLoadFailed) return null;
-  if (cachedFontBase64) return cachedFontBase64;
+async function fetchBase64(url: string): Promise<string> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Font fetch failed: ${url}`);
+  const buf = await res.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  const chunkSize = 8192;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...(Array.from(bytes.subarray(i, Math.min(i + chunkSize, bytes.length)))));
+  }
+  return btoa(binary);
+}
+
+async function loadFonts(): Promise<FontCache | null> {
+  if (fontCacheFailed) return null;
+  if (cachedFonts) return cachedFonts;
   try {
-    const response = await fetch(
-      'https://cdn.jsdelivr.net/fontsource/fonts/noto-sans@latest/greek-400-normal.ttf'
-    );
-    if (!response.ok) throw new Error('Font fetch failed');
-    const buffer = await response.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-    cachedFontBase64 = btoa(binary);
-    return cachedFontBase64;
+    const [regular, bold] = await Promise.all([
+      fetchBase64('https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSans.ttf'),
+      fetchBase64('https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSans-Bold.ttf'),
+    ]);
+    cachedFonts = { regular, bold };
+    return cachedFonts;
   } catch {
-    fontLoadFailed = true;
+    fontCacheFailed = true;
     return null;
   }
 }
 
-function registerFont(doc: jsPDF, fontBase64: string) {
-  doc.addFileToVFS('NotoSans-Regular.ttf', fontBase64);
-  doc.addFont('NotoSans-Regular.ttf', 'NotoSans', 'normal');
-}
-
-function hasNonLatin(text: string): boolean {
-  return /[^\u0000-\u024F]/.test(text);
+function registerFonts(doc: jsPDF, fonts: FontCache) {
+  doc.addFileToVFS('DejaVuSans.ttf', fonts.regular);
+  doc.addFont('DejaVuSans.ttf', 'DejaVu', 'normal');
+  doc.addFileToVFS('DejaVuSans-Bold.ttf', fonts.bold);
+  doc.addFont('DejaVuSans-Bold.ttf', 'DejaVu', 'bold');
 }
 
 function fmtDate(iso: string, locale = 'el-GR'): string {
@@ -130,21 +141,19 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       const insuranceFull = r.insurance_type === 'full';
       const franchise = insuranceFull ? 0 : 500;
 
-      // Load Greek font
-      const fontBase64 = await loadUnicodeFont();
-      let unicode = false;
-      if (fontBase64) {
-        registerFont(doc, fontBase64);
-        unicode = true;
+      // Load fonts with Greek support
+      const fonts = await loadFonts();
+      let fontName = 'helvetica';
+      if (fonts) {
+        registerFonts(doc, fonts);
+        fontName = 'DejaVu';
+        doc.setFont('DejaVu', 'normal');
       }
 
-      // Font helpers
-      const gr = (text: string) => {
-        if (unicode && hasNonLatin(text)) doc.setFont('NotoSans', 'normal');
-        else doc.setFont('helvetica', 'normal');
-      };
-      const bold = () => doc.setFont('helvetica', 'bold');
-      const normal = () => doc.setFont('helvetica', 'normal');
+      // Font helpers — use DejaVu when available so Greek renders correctly
+      const gr = (_text: string) => doc.setFont(fontName, 'normal');
+      const bold = () => doc.setFont(fontName, 'bold');
+      const normal = () => doc.setFont(fontName, 'normal');
       const rgb = (r: number, g: number, b: number) => doc.setTextColor(r, g, b);
       const fill = (r: number, g: number, b: number) => doc.setFillColor(r, g, b);
       const draw = (r: number, g: number, b: number) => doc.setDrawColor(r, g, b);

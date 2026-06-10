@@ -170,7 +170,7 @@ const CheckOutForm: React.FC<CheckOutFormProps> = ({ reservationId, onComplete, 
           {/* Photos */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-4">
-              Φωτογραφίες Οχήματος (τουλάχιστον 4)
+              Φωτογραφίες Οχήματος (προαιρετικά)
             </label>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -204,7 +204,7 @@ const CheckOutForm: React.FC<CheckOutFormProps> = ({ reservationId, onComplete, 
             </div>
             
             <p className="text-sm text-gray-600">
-              Απαιτούνται φωτογραφίες: μπροστά, πίσω, αριστερά, δεξιά του οχήματος
+              Φωτογραφίες: μπροστά, πίσω, αριστερά, δεξιά (προαιρετικά)
             </p>
           </div>
 
@@ -293,7 +293,7 @@ const CheckOutForm: React.FC<CheckOutFormProps> = ({ reservationId, onComplete, 
           </button>
           <button
             onClick={handleSubmit}
-            disabled={checkOutData.photos.length < 4}
+            disabled={false}
             className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Ολοκλήρωση Check-out

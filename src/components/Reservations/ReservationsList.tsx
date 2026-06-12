@@ -459,7 +459,14 @@ const ReservationsList: React.FC<ReservationsListProps> = ({ onCheckOut, onCheck
       {checkoutReservationId && (
         <CheckOutForm
           reservationId={checkoutReservationId}
-          onComplete={() => {
+          onComplete={async () => {
+            if (checkoutReservationId) {
+              const res = reservations.find(r => r.id === checkoutReservationId);
+              await reservationService.update(checkoutReservationId, { status: 'active' });
+              if (res?.vehicle_id) {
+                await vehicleService.update(res.vehicle_id, { status: 'rented' });
+              }
+            }
             setCheckoutReservationId(null);
             fetchReservations();
           }}

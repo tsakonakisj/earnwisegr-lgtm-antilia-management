@@ -167,20 +167,49 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       const sectionHeader = (title: string, x: number, yy: number, w: number) => {
         fill(13, 71, 161);
         doc.rect(x, yy, w, 6, 'F');
-        rgb(255, 255, 255);
-        doc.setFontSize(8.5);
-        bold();
-        doc.text(title, x + 3, yy + 4.2);
+        const sep = title.indexOf('  /  ');
+        if (sep > 0) {
+          const eng = title.substring(0, sep);
+          const grk = '  /  ' + title.substring(sep + 5);
+          doc.setFontSize(8.5);
+          bold();
+          rgb(255, 255, 255);
+          doc.text(eng, x + 3, yy + 4.2);
+          const engW = doc.getTextWidth(eng);
+          doc.setFontSize(7);
+          normal();
+          rgb(185, 210, 255);
+          doc.text(grk, x + 3 + engW, yy + 4.2);
+        } else {
+          doc.setFontSize(8.5);
+          bold();
+          rgb(255, 255, 255);
+          doc.text(title, x + 3, yy + 4.2);
+        }
         rgb(0, 0, 0);
         normal();
         return yy + 10;
       };
 
       const row = (label: string, value: string, x: number, yy: number, colW: number): number => {
-        doc.setFontSize(7.5);
-        rgb(100, 100, 100);
-        normal();
-        doc.text(label, x + 2, yy);
+        const sep = label.indexOf(' / ');
+        if (sep > 0) {
+          const eng = label.substring(0, sep);
+          const grk = ' / ' + label.substring(sep + 3);
+          doc.setFontSize(7.5);
+          rgb(80, 80, 80);
+          normal();
+          doc.text(eng, x + 2, yy);
+          const engW = doc.getTextWidth(eng);
+          doc.setFontSize(6.5);
+          rgb(155, 155, 155);
+          doc.text(grk, x + 2 + engW, yy);
+        } else {
+          doc.setFontSize(7.5);
+          rgb(100, 100, 100);
+          normal();
+          doc.text(label, x + 2, yy);
+        }
         rgb(20, 20, 20);
         doc.setFontSize(8.5);
         gr(value);
@@ -214,8 +243,11 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       rgb(13, 71, 161);
       doc.setFontSize(9);
       bold();
-      doc.text('ΣΥΜΒΟΛΑΙΟ ΕΝΟΙΚΙΑΣΗΣ', PW - 41.5, 12, { align: 'center' });
-      doc.text('CAR RENTAL AGREEMENT', PW - 41.5, 17.5, { align: 'center' });
+      doc.text('CAR RENTAL AGREEMENT', PW - 41.5, 12, { align: 'center' });
+      doc.setFontSize(7.5);
+      normal();
+      rgb(100, 120, 180);
+      doc.text('ΣΥΜΒΟΛΑΙΟ ΕΝΟΙΚΙΑΣΗΣ', PW - 41.5, 17, { align: 'center' });
       doc.setFontSize(7.5);
       normal();
       rgb(80, 80, 80);
@@ -230,8 +262,8 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       doc.setFontSize(7.5);
       normal();
       const metaDate = new Date().toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      doc.text(`Ημερομηνία Εκτύπωσης / Print Date: ${metaDate}`, M, y);
-      doc.text(`Αρ. Κράτησης / Booking Ref: ${r.id.substring(0, 8).toUpperCase()}`, PW / 2, y, { align: 'center' });
+      doc.text(`Print Date / Ημερομηνία Εκτύπωσης: ${metaDate}`, M, y);
+      doc.text(`Booking Ref / Αρ. Κράτησης: ${r.id.substring(0, 8).toUpperCase()}`, PW / 2, y, { align: 'center' });
 
       draw(13, 71, 161);
       lw(0.5);
@@ -245,25 +277,25 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       const half = CW / 2 - 2;
       const col2 = M + half + 4;
 
-      y = sectionHeader('ΣΤΟΙΧΕΙΑ ΠΕΛΑΤΗ  /  CUSTOMER INFORMATION', M, y, half);
+      y = sectionHeader('CUSTOMER INFORMATION  /  ΣΤΟΙΧΕΙΑ ΠΕΛΑΤΗ', M, y, half);
       const customerStartY = y;
-      y = row('Ονοματεπώνυμο / Name', r.customer.name, M, y, half);
-      y = row('Τηλέφωνο / Phone', r.customer.phone, M, y, half);
+      y = row('Name / Ονοματεπώνυμο', r.customer.name, M, y, half);
+      y = row('Phone / Τηλέφωνο', r.customer.phone, M, y, half);
       y = row('Email', r.customer.email, M, y, half);
-      y = row('Χώρα / Country', r.customer.country, M, y, half);
-      y = row('Αρ. Άδειας / License No', r.customer.license_number, M, y, half);
-      y = row('Ημ. Γέννησης / Date of Birth', r.customer.birth_date ? fmtDate(r.customer.birth_date) : '-', M, y, half);
+      y = row('Country / Χώρα', r.customer.country, M, y, half);
+      y = row('License No / Αρ. Άδειας', r.customer.license_number, M, y, half);
+      y = row('Date of Birth / Ημ. Γέννησης', r.customer.birth_date ? fmtDate(r.customer.birth_date) : '-', M, y, half);
       const customerEndY = y;
 
-      let yv = sectionHeader('ΣΤΟΙΧΕΙΑ ΟΧΗΜΑΤΟΣ  /  VEHICLE INFORMATION', col2, customerStartY - 10, half);
-      yv = row('Πινακίδα / License Plate', r.vehicle.plate, col2, yv, half);
-      yv = row('Όχημα / Vehicle', `${r.vehicle.brand} ${r.vehicle.model}`, col2, yv, half);
-      yv = row('Κατηγορία / Category', r.vehicle.category, col2, yv, half);
+      let yv = sectionHeader('VEHICLE INFORMATION  /  ΣΤΟΙΧΕΙΑ ΟΧΗΜΑΤΟΣ', col2, customerStartY - 10, half);
+      yv = row('License Plate / Πινακίδα', r.vehicle.plate, col2, yv, half);
+      yv = row('Vehicle / Όχημα', `${r.vehicle.brand} ${r.vehicle.model}`, col2, yv, half);
+      yv = row('Category / Κατηγορία', r.vehicle.category, col2, yv, half);
 
       if (r.fuel_level !== undefined)
-        yv = row('Επίπεδο Καυσίμου / Fuel Level', fuelFraction(r.fuel_level), col2, yv, half);
+        yv = row('Fuel Level / Επίπεδο Καυσίμου', fuelFraction(r.fuel_level), col2, yv, half);
       if (r.odometer !== undefined)
-        yv = row('Χιλιόμετρα Παραλαβής / Odometer', `${r.odometer.toLocaleString()} km`, col2, yv, half);
+        yv = row('Odometer / Χιλιόμετρα Παραλαβής', `${r.odometer.toLocaleString()} km`, col2, yv, half);
 
       y = Math.max(customerEndY, yv) + 2;
 
@@ -275,7 +307,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       // ═══════════════════════════════════════
       // RENTAL PERIOD
       // ═══════════════════════════════════════
-      y = sectionHeader('ΠΕΡΙΟΔΟΣ ΕΝΟΙΚΙΑΣΗΣ  /  RENTAL PERIOD', M, y, CW);
+      y = sectionHeader('RENTAL PERIOD  /  ΠΕΡΙΟΔΟΣ ΕΝΟΙΚΙΑΣΗΣ', M, y, CW);
 
       const colPickup = M;
       const colReturn = M + CW / 2 + 2;
@@ -284,7 +316,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       rgb(100, 100, 100);
       doc.setFontSize(7);
       bold();
-      doc.text('Παραλαβή / PICK-UP', colPickup + 2, y);
+      doc.text('PICK-UP / Παραλαβή', colPickup + 2, y);
       y += 4.5;
       rgb(0, 0, 0);
       doc.setFontSize(9);
@@ -301,7 +333,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       rgb(100, 100, 100);
       doc.setFontSize(7);
       bold();
-      doc.text('Επιστροφή / RETURN', colReturn, yRet);
+      doc.text('RETURN / Επιστροφή', colReturn, yRet);
       yRet += 4.5;
       rgb(0, 0, 0);
       doc.setFontSize(9);
@@ -327,7 +359,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       rgb(13, 71, 161);
       doc.setFontSize(8);
       bold();
-      doc.text(`Διάρκεια / Duration: ${days} ημέρ. / day${days !== 1 ? 's' : ''}`, M + CW / 2, y + 4.8, { align: 'center' });
+      doc.text(`Duration / Διάρκεια: ${days} day${days !== 1 ? 's' : ''} / ημέρ.`, M + CW / 2, y + 4.8, { align: 'center' });
       normal();
       rgb(0, 0, 0);
       y += 9;
@@ -341,29 +373,29 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       // INSURANCE & PAYMENT (two columns)
       // ═══════════════════════════════════════
       const insStartY = y;
-      y = sectionHeader('ΑΣΦΑΛΙΣΗ  /  INSURANCE', M, y, half);
+      y = sectionHeader('INSURANCE  /  ΑΣΦΑΛΙΣΗ', M, y, half);
 
-      const insLabel = insuranceFull ? 'Πλήρης Κάλυψη / Full Coverage' : 'Βασική / Basic';
+      const insLabel = insuranceFull ? 'Full Coverage / Πλήρης Κάλυψη' : 'Basic / Βασική';
       rgb(0, 0, 0);
       doc.setFontSize(9);
       bold();
       txt(insLabel, M + 2, y);
       y += 5;
-      y = row('Τέλος Ασφάλισης / Insurance Fee', `EUR ${Number(r.insurance_rate).toFixed(2)} / ημέρα (day)`, M, y, half);
+      y = row('Insurance Fee / Τέλος Ασφάλισης', `EUR ${Number(r.insurance_rate).toFixed(2)} / day (ημέρα)`, M, y, half);
 
       let yPay = insStartY;
-      yPay = sectionHeader('ΠΛΗΡΩΜΗ  /  PAYMENT', col2, yPay, half);
+      yPay = sectionHeader('PAYMENT  /  ΠΛΗΡΩΜΗ', col2, yPay, half);
 
       const payMethod = r.payment_method
-        ? (r.payment_method === 'cash' ? 'Μετρητά / Cash' : 'Κάρτα / Card')
+        ? (r.payment_method === 'cash' ? 'Cash / Μετρητά' : 'Card / Κάρτα')
         : '-';
-      yPay = row('Τρόπος Πληρωμής / Payment Method', payMethod, col2, yPay, half);
+      yPay = row('Payment Method / Τρόπος Πληρωμής', payMethod, col2, yPay, half);
 
       if (r.deposit_amount !== undefined)
-        yPay = row('Εγγύηση / Deposit', `EUR ${Number(r.deposit_amount).toFixed(2)}`, col2, yPay, half);
+        yPay = row('Deposit / Εγγύηση', `EUR ${Number(r.deposit_amount).toFixed(2)}`, col2, yPay, half);
 
-      yPay = row('Ημερήσιο Τέλος / Daily Rate', `EUR ${Number(r.daily_rate).toFixed(2)}`, col2, yPay, half);
-      yPay = row('Αριθμός Ημερών / Days', String(days), col2, yPay, half);
+      yPay = row('Daily Rate / Ημερήσιο Τέλος', `EUR ${Number(r.daily_rate).toFixed(2)}`, col2, yPay, half);
+      yPay = row('Days / Αριθμός Ημερών', String(days), col2, yPay, half);
 
       if (r.extras && r.extras.length > 0) {
         r.extras.forEach(ex => {
@@ -377,7 +409,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       rgb(255, 255, 255);
       doc.setFontSize(8);
       bold();
-      doc.text('ΣΥΝΟΛΟ / TOTAL:', col2 + 2, yPay + 4.5);
+      doc.text('TOTAL / ΣΥΝΟΛΟ:', col2 + 2, yPay + 4.5);
       doc.setFontSize(11);
       doc.text(`EUR ${Number(r.total_amount).toFixed(2)}`, col2 + half - 3, yPay + 7, { align: 'right' });
       yPay += 12;
@@ -397,13 +429,13 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
         (r.damages && r.damages.length > 0);
 
       if (hasConditionData) {
-        y = sectionHeader('ΚΑΤΑΣΤΑΣΗ ΟΧΗΜΑΤΟΣ ΠΑΡΑΛΑΒΗΣ  /  VEHICLE CONDITION AT PICK-UP', M, y, CW);
+        y = sectionHeader('VEHICLE CONDITION AT PICK-UP  /  ΚΑΤΑΣΤΑΣΗ ΟΧΗΜΑΤΟΣ ΠΑΡΑΛΑΒΗΣ', M, y, CW);
 
         // Fuel gauge visual
         if (r.fuel_level !== undefined) {
           doc.setFontSize(7.5);
           rgb(80, 80, 80);
-          doc.text('Καύσιμα / Fuel:', M + 2, y);
+          doc.text('Fuel / Καύσιμα:', M + 2, y);
           const gaugeX = M + 30;
           const gaugeW = 60;
           const gaugeH = 5;
@@ -424,7 +456,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
         if (r.odometer !== undefined) {
           doc.setFontSize(7.5);
           rgb(80, 80, 80);
-          doc.text('Χιλιόμετρα Παραλαβής / Odometer at Pick-up:', M + 2, y);
+          doc.text('Odometer at Pick-up / Χιλιόμετρα Παραλαβής:', M + 2, y);
           rgb(0, 0, 0);
           doc.setFontSize(8.5);
           bold();
@@ -436,7 +468,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
         if (r.accessories_given && r.accessories_given.length > 0) {
           doc.setFontSize(7.5);
           rgb(80, 80, 80);
-          doc.text('Αξεσουάρ που Παραδόθηκαν / Accessories Provided:', M + 2, y);
+          doc.text('Accessories Provided / Αξεσουάρ που Παραδόθηκαν:', M + 2, y);
           y += 4;
           rgb(0, 0, 0);
           doc.setFontSize(8);
@@ -451,7 +483,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
           doc.setFontSize(7.5);
           rgb(150, 50, 0);
           bold();
-          doc.text('Προϋπάρχουσες Ζημιές / Pre-existing Damages:', M + 2, y);
+          doc.text('Pre-existing Damages / Προϋπάρχουσες Ζημιές:', M + 2, y);
           y += 4;
           r.damages.forEach((d, i) => {
             rgb(100, 40, 0);
@@ -465,7 +497,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
         } else {
           doc.setFontSize(7.5);
           rgb(46, 125, 50);
-          doc.text('Δεν καταγράφηκαν ζημιές κατά την παραλαβή. / No damages noted at pick-up.', M + 2, y);
+          doc.text('No damages noted at pick-up. / Δεν καταγράφηκαν ζημιές κατά την παραλαβή.', M + 2, y);
           y += 5;
         }
 
@@ -479,16 +511,16 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       // ═══════════════════════════════════════
       // TERMS & CONDITIONS
       // ═══════════════════════════════════════
-      y = sectionHeader('ΟΡΟΙ & ΠΡΟΫΠΟΘΕΣΕΙΣ  /  TERMS & CONDITIONS', M, y, CW);
+      y = sectionHeader('TERMS & CONDITIONS  /  ΟΡΟΙ & ΠΡΟΫΠΟΘΕΣΕΙΣ', M, y, CW);
 
       const terms = [
-        '1. Το όχημα παραδίδεται στον ενοικιαστή στην κατάσταση που αναγράφεται παραπάνω. / The vehicle is delivered to the renter in the condition stated above.',
-        '2. Το όχημα πρέπει να επιστραφεί με το ίδιο επίπεδο καυσίμου. Τυχόν έλλειψη χρεώνεται. / Vehicle must be returned with the same fuel level. Shortfall will be charged.',
-        '3. Ο ενοικιαστής ευθύνεται πλήρως για κάθε ζημιά κατά την ενοικίαση πέραν της franchise. / Renter is liable for all damage during rental up to the franchise amount.',
-        '4. Καθυστερημένη επιστροφή χρεώνεται EUR 10/ώρα. / Late returns are charged EUR 10.00 per hour.',
-        '5. Απαγορεύεται το κάπνισμα και η μεταφορά ζώων. / Smoking and pets are strictly prohibited.',
-        '6. Σε περίπτωση ατυχήματος ειδοποιήστε άμεσα την εταιρεία και τις αρχές. / In case of accident, notify the company and authorities immediately.',
-        '7. Απαγορεύεται η οδήγηση υπό την επήρεια αλκοόλ ή ναρκωτικών. / Driving under the influence of alcohol or drugs is strictly forbidden.',
+        '1. The vehicle is delivered to the renter in the condition stated above. / Το όχημα παραδίδεται στον ενοικιαστή στην κατάσταση που αναγράφεται παραπάνω.',
+        '2. Vehicle must be returned with the same fuel level. Shortfall will be charged. / Το όχημα πρέπει να επιστραφεί με το ίδιο επίπεδο καυσίμου. Τυχόν έλλειψη χρεώνεται.',
+        '3. Renter is liable for all damage during rental up to the self risk amount. / Ο ενοικιαστής ευθύνεται πλήρως για κάθε ζημιά κατά την ενοικίαση πέραν του self risk.',
+        '4. Late returns are charged EUR 10.00 per hour. / Καθυστερημένη επιστροφή χρεώνεται EUR 10/ώρα.',
+        '5. Smoking and pets are strictly prohibited. / Απαγορεύεται το κάπνισμα και η μεταφορά ζώων.',
+        '6. In case of accident, notify the company and authorities immediately. / Σε περίπτωση ατυχήματος ειδοποιήστε άμεσα την εταιρεία και τις αρχές.',
+        '7. Driving under the influence of alcohol or drugs is strictly forbidden. / Απαγορεύεται η οδήγηση υπό την επήρεια αλκοόλ ή ναρκωτικών.',
       ];
 
       doc.setFontSize(6.2);
@@ -514,7 +546,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       rgb(80, 60, 0);
       doc.setFontSize(7);
       normal();
-      const decl = 'Με την υπογραφή μου βεβαιώνω ότι έχω διαβάσει, κατανοήσει και αποδέχομαι τους παραπάνω όρους. / By signing below I confirm that I have read, understood and accept the above terms.';
+      const decl = 'By signing below I confirm that I have read, understood and accept the above terms. / Με την υπογραφή μου βεβαιώνω ότι έχω διαβάσει, κατανοήσει και αποδέχομαι τους παραπάνω όρους.';
       const declLines = doc.splitTextToSize(decl, CW - 4);
       doc.text(declLines, M + 2, y + 3.5);
       y += 11;
@@ -528,7 +560,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       // ═══════════════════════════════════════
       // SIGNATURES
       // ═══════════════════════════════════════
-      y = sectionHeader('ΥΠΟΓΡΑΦΕΣ  /  SIGNATURES', M, y, CW);
+      y = sectionHeader('SIGNATURES  /  ΥΠΟΓΡΑΦΕΣ', M, y, CW);
 
       const sigW = CW / 3 - 3;
       const sigH = 25;
@@ -544,8 +576,8 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       rgb(80, 80, 80);
       doc.setFontSize(7);
       normal();
-      doc.text('Υπογραφή Πελάτη', sig1x + sigW / 2, y + 4, { align: 'center' });
-      doc.text('Customer Signature', sig1x + sigW / 2, y + 7.5, { align: 'center' });
+      doc.text('Customer Signature', sig1x + sigW / 2, y + 4, { align: 'center' });
+      doc.text('Υπογραφή Πελάτη', sig1x + sigW / 2, y + 7.5, { align: 'center' });
       rgb(20, 20, 20);
       doc.setFontSize(7.5);
       gr(r.customer.name);
@@ -561,8 +593,8 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       rgb(80, 80, 80);
       doc.setFontSize(7);
       normal();
-      doc.text('Εκπρόσωπος Εταιρείας', sig2x + sigW / 2, y + 4, { align: 'center' });
-      doc.text('Company Agent', sig2x + sigW / 2, y + 7.5, { align: 'center' });
+      doc.text('Company Agent', sig2x + sigW / 2, y + 4, { align: 'center' });
+      doc.text('Εκπρόσωπος Εταιρείας', sig2x + sigW / 2, y + 7.5, { align: 'center' });
       draw(100, 100, 100);
       doc.line(sig2x + 4, y + sigH - 2, sig2x + sigW - 4, y + sigH - 2);
 
@@ -573,7 +605,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       rgb(80, 80, 80);
       doc.setFontSize(7);
       normal();
-      doc.text('Ημερομηνία / Date', sig3x + sigW / 2, y + 4, { align: 'center' });
+      doc.text('Date / Ημερομηνία', sig3x + sigW / 2, y + 4, { align: 'center' });
       rgb(20, 20, 20);
       doc.setFontSize(8.5);
       bold();
@@ -581,7 +613,7 @@ const ContractGenerator: React.FC<ContractGeneratorProps> = ({ data }) => {
       normal();
       doc.setFontSize(7);
       rgb(80, 80, 80);
-      doc.text('Τόπος / Place:', sig3x + sigW / 2, y + 20, { align: 'center' });
+      doc.text('Place / Τόπος:', sig3x + sigW / 2, y + 20, { align: 'center' });
       draw(100, 100, 100);
       doc.line(sig3x + 4, y + sigH - 2, sig3x + sigW - 4, y + sigH - 2);
 

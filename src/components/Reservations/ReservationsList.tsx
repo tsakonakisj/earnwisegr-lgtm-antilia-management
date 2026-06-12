@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import ContractGenerator from '../PDF/ContractGenerator';
 import CheckOutForm from '../CheckOut/CheckOutForm';
+import CheckInForm from '../CheckIn/CheckInForm';
 import type { Station, Vehicle, Pricing, Reservation } from '../../types';
 
 interface ReservationRow {
@@ -127,10 +128,9 @@ const ReservationsList: React.FC<ReservationsListProps> = ({ onCheckOut, onCheck
   const [actionError, setActionError] = useState('');
   const [changingStatus, setChangingStatus] = useState<string | null>(null);
   const [checkingOut, setCheckingOut] = useState<string | null>(null);
-  const [checkingIn, setCheckingIn] = useState<string | null>(null);
-  const [earlyReturnConfirm, setEarlyReturnConfirm] = useState<ReservationRow | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [checkoutReservationId, setCheckoutReservationId] = useState<string | null>(null);
+  const [checkInReservationId, setCheckInReservationId] = useState<string | null>(null);
 
   // Edit mode
   const [editing, setEditing] = useState(false);
@@ -214,33 +214,7 @@ const ReservationsList: React.FC<ReservationsListProps> = ({ onCheckOut, onCheck
       onCheckIn(reservation.id);
       return;
     }
-    const returnTime = new Date(reservation.return_date).getTime();
-    const now = Date.now();
-    if (now < returnTime) {
-      setEarlyReturnConfirm(reservation);
-    } else {
-      performCheckIn(reservation);
-    }
-  };
-
-  const performCheckIn = async (reservation: ReservationRow) => {
-    setCheckingIn(reservation.id);
-    setActionError('');
-    setEarlyReturnConfirm(null);
-    try {
-      await reservationService.update(reservation.id, { status: 'completed' });
-      if (reservation.vehicle_id) {
-        await vehicleService.update(reservation.vehicle_id, { status: 'available' });
-      }
-      setReservations(prev =>
-        prev.map(r => (r.id === reservation.id ? { ...r, status: 'completed' as ReservationRow['status'] } : r))
-      );
-    } catch (err) {
-      console.error('Check-in failed:', err);
-      setActionError('Αποτυχία check-in.');
-    } finally {
-      setCheckingIn(null);
-    }
+    setCheckInReservationId(reservation.id);
   };
 
   const handleDelete = async (id: string) => {
@@ -473,6 +447,23 @@ const ReservationsList: React.FC<ReservationsListProps> = ({ onCheckOut, onCheck
           onCancel={() => setCheckoutReservationId(null)}
         />
       )}
+      {checkInReservationId && (
+        <CheckInForm
+          reservationId={checkInReservationId}
+          onComplete={async () => {
+            if (checkInReservationId) {
+              const res = reservations.find(r => r.id === checkInReservationId);
+              await reservationService.update(checkInReservationId, { status: 'completed' });
+              if (res?.vehicle_id) {
+                await vehicleService.update(res.vehicle_id, { status: 'available' });
+              }
+            }
+            setCheckInReservationId(null);
+            fetchReservations();
+          }}
+          onCancel={() => setCheckInReservationId(null)}
+        />
+      )}
       {actionError && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
           {actionError}
@@ -665,11 +656,10 @@ const ReservationsList: React.FC<ReservationsListProps> = ({ onCheckOut, onCheck
                   {reservation.status === 'active' && (
                     <button
                       onClick={() => handleCheckInClick(reservation)}
-                      disabled={checkingIn === reservation.id}
-                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 transition-colors"
+                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded text-white bg-green-600 hover:bg-green-700 transition-colors"
                     >
                       <CheckIcon className="h-4 w-4 mr-1" />
-                      {checkingIn === reservation.id ? 'Check-in...' : 'Check-in'}
+                      Check-in
                     </button>
                   )}
                 </div>
@@ -678,33 +668,6 @@ const ReservationsList: React.FC<ReservationsListProps> = ({ onCheckOut, onCheck
           </div>
         ))}
       </div>
-
-      {/* Early return confirmation dialog */}
-      {earlyReturnConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-gray-900 bg-opacity-50" onClick={() => setEarlyReturnConfirm(null)} />
-          <div className="relative bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 p-5 z-10">
-            <p className="text-sm font-medium text-amber-700 mb-4">
-              Η προγραμματισμένη ώρα επιστροφής δεν έχει περάσει ακόμα. Θέλετε να κάνετε check-in τώρα;
-            </p>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setEarlyReturnConfirm(null)}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Ακύρωση
-              </button>
-              <button
-                onClick={() => performCheckIn(earlyReturnConfirm)}
-                disabled={checkingIn === earlyReturnConfirm.id}
-                className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-              >
-                {checkingIn === earlyReturnConfirm.id ? 'Check-in...' : 'Ναι, Check-in'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* View/Edit Reservation Modal */}
       {viewReservation && (

@@ -254,7 +254,7 @@ const ReportsPageNew: React.FC = () => {
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap gap-4 justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">Αναφορές</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">ΑΝΑΦΟΡΕΣ v2</h1>
         <div className="flex items-center gap-3">
           <input
             type="date"

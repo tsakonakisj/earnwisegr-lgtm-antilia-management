@@ -11,7 +11,7 @@ import ReservationsList from './Reservations/ReservationsList';
 import CustomerManagement from './Customers/CustomerManagement';
 import FleetManagement from './Fleet/FleetManagement';
 import PricingManagement from './Pricing/PricingManagement';
-import ReportsPage from './Reports/ReportsPage';
+import ReportsPage from './Reports/ReportsPageNew';
 import UserManagement from './Users/UserManagement';
 import SettingsPage from './Settings/SettingsPage';
 import CheckOutForm from './CheckOut/CheckOutForm';

@@ -22,6 +22,6 @@ export const company: CompanyConfig = {
   registrationNumber: 'ΑΕ 00000',
   contractHeader: 'DEMO RENT A CAR',
   contractSubheader: 'Chania, Crete',
-  demoEmail: 'demo@rentacar.com',
+  demoEmail: 'manager@antilia.com',
   demoPassword: 'demo123',
 };

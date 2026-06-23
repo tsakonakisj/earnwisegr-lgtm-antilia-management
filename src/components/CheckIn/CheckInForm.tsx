@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { photoService } from '../../lib/database';
-import { 
-  CameraIcon, 
+import {
+  CameraIcon,
   TrashIcon,
   CheckIcon,
   XMarkIcon,
@@ -47,6 +47,11 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ reservationId, onComplete, on
   const [showChargeForm, setShowChargeForm] = useState(false);
   const [newDamage, setNewDamage] = useState({ description: '', cost: 0 });
   const [newCharge, setNewCharge] = useState({ type: '', amount: 0, description: '' });
+
+  // Scroll to top when form opens
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const chargeTypes = [
     'Καύσιμο',

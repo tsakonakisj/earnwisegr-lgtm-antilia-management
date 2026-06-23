@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { photoService } from '../../lib/database';
-import { 
-  CameraIcon, 
+import {
+  CameraIcon,
   TrashIcon,
   CheckIcon,
   XMarkIcon
@@ -38,6 +38,11 @@ const CheckOutForm: React.FC<CheckOutFormProps> = ({ reservationId, onComplete, 
 
   const [newDamage, setNewDamage] = useState('');
   const [showDamageForm, setShowDamageForm] = useState(false);
+
+  // Scroll to top when form opens
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const accessories = [
     'Παιδικό κάθισμα',

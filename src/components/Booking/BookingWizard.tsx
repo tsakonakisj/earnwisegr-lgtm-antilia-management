@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { reservationService, customerService } from '../../lib/database';
 import type { Customer, Reservation } from '../../types';
@@ -66,6 +66,11 @@ interface BookingWizardProps {
 const BookingWizard: React.FC<BookingWizardProps> = ({ onComplete }) => {
   const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(1);
+
+  // Scroll to top when wizard opens
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   // Σήμερα & Αύριο
   const today = new Date();

@@ -72,16 +72,13 @@ const SettingsPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      // Load company settings
-      const { data: companyData, error: companyError } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'company')
-        .maybeSingle();
+      // Load company settings via RPC (bypasses schema cache)
+      const { data: companyData, error: companyError } = await supabase.rpc('get_setting', {
+        p_key: 'company',
+      });
 
-      if (companyError) throw companyError;
-      if (companyData?.value) {
-        const v = companyData.value as Record<string, unknown>;
+      if (!companyError && companyData) {
+        const v = companyData as Record<string, unknown>;
         setCompanySettings({
           name: (v.name as string) || '',
           address: (v.address as string) || '',
@@ -93,16 +90,13 @@ const SettingsPage: React.FC = () => {
         });
       }
 
-      // Load financial settings
-      const { data: financialData, error: financialError } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'financial')
-        .maybeSingle();
+      // Load financial settings via RPC
+      const { data: financialData, error: financialError } = await supabase.rpc('get_setting', {
+        p_key: 'financial',
+      });
 
-      if (financialError) throw financialError;
-      if (financialData?.value) {
-        const v = financialData.value as Record<string, unknown>;
+      if (!financialError && financialData) {
+        const v = financialData as Record<string, unknown>;
         setFinancialSettings({
           currency: (v.currency as string) || 'EUR',
           vat_rate: (v.vat_rate as number) || 24,
@@ -140,7 +134,7 @@ const SettingsPage: React.FC = () => {
     setError('');
     setSaved(false);
     try {
-      // Save company settings
+      // Save company settings via RPC
       const companyPayload = {
         name: companySettings.name,
         address: companySettings.address,
@@ -151,27 +145,23 @@ const SettingsPage: React.FC = () => {
         registrationNumber: companySettings.registration_number,
       };
 
-      const { error: companyError } = await supabase
-        .from('settings')
-        .upsert(
-          { key: 'company', value: companyPayload, updated_at: new Date().toISOString() },
-          { onConflict: 'key' }
-        );
+      const { error: companyError } = await supabase.rpc('save_setting', {
+        p_key: 'company',
+        p_value: companyPayload,
+      });
 
       if (companyError) throw companyError;
 
-      // Save financial settings
-      const { error: financialError } = await supabase
-        .from('settings')
-        .upsert(
-          { key: 'financial', value: financialSettings, updated_at: new Date().toISOString() },
-          { onConflict: 'key' }
-        );
+      // Save financial settings via RPC
+      const { error: financialError } = await supabase.rpc('save_setting', {
+        p_key: 'financial',
+        p_value: financialSettings,
+      });
 
       if (financialError) throw financialError;
 
       setSaved(true);
-      clearCompanyCache(); // Clear cache so other components refetch
+      clearCompanyCache();
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       console.error('Failed to save settings:', err);

@@ -33,7 +33,7 @@ const DEFAULT_CONFIG: CompanyConfig = {
 let cachedConfig: CompanyConfig | null = null;
 
 /**
- * Load company settings from database
+ * Load company settings from database via RPC
  */
 export async function loadCompanyConfig(): Promise<CompanyConfig> {
   if (cachedConfig) {
@@ -42,14 +42,12 @@ export async function loadCompanyConfig(): Promise<CompanyConfig> {
 
   try {
     if (supabase) {
-      const { data, error } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'company')
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('get_setting', {
+        p_key: 'company',
+      });
 
-      if (!error && data?.value) {
-        const v = data.value as Record<string, unknown>;
+      if (!error && data) {
+        const v = data as Record<string, unknown>;
         cachedConfig = {
           name: (v.name as string) || DEFAULT_CONFIG.name,
           phone: (v.phone as string) || DEFAULT_CONFIG.phone,

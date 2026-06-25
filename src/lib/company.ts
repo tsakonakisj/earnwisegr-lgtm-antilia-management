@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 export interface CompanyConfig {
   name: string;
   phone: string;
@@ -12,7 +14,8 @@ export interface CompanyConfig {
   demoPassword: string;
 }
 
-export const company: CompanyConfig = {
+// Fallback defaults (used when database is not available)
+const DEFAULT_CONFIG: CompanyConfig = {
   name: 'Demo Rent a Car',
   phone: '+30 28210 00000',
   email: 'info@demo-rentacar.gr',
@@ -25,3 +28,64 @@ export const company: CompanyConfig = {
   demoEmail: 'manager@antilia.com',
   demoPassword: 'demo123',
 };
+
+// Cached company config
+let cachedConfig: CompanyConfig | null = null;
+
+/**
+ * Load company settings from database
+ */
+export async function loadCompanyConfig(): Promise<CompanyConfig> {
+  if (cachedConfig) {
+    return cachedConfig;
+  }
+
+  try {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'company')
+        .maybeSingle();
+
+      if (!error && data?.value) {
+        const v = data.value as Record<string, unknown>;
+        cachedConfig = {
+          name: (v.name as string) || DEFAULT_CONFIG.name,
+          phone: (v.phone as string) || DEFAULT_CONFIG.phone,
+          email: (v.email as string) || DEFAULT_CONFIG.email,
+          address: (v.address as string) || DEFAULT_CONFIG.address,
+          website: (v.website as string) || DEFAULT_CONFIG.website,
+          taxNumber: (v.taxNumber as string) || DEFAULT_CONFIG.taxNumber,
+          registrationNumber: (v.registrationNumber as string) || DEFAULT_CONFIG.registrationNumber,
+          contractHeader: (v.contractHeader as string) || DEFAULT_CONFIG.contractHeader,
+          contractSubheader: (v.contractSubheader as string) || DEFAULT_CONFIG.contractSubheader,
+          demoEmail: DEFAULT_CONFIG.demoEmail,
+          demoPassword: DEFAULT_CONFIG.demoPassword,
+        };
+        return cachedConfig;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load company config:', err);
+  }
+
+  return DEFAULT_CONFIG;
+}
+
+/**
+ * Get company config (synchronous, returns cached or default)
+ */
+export function getCompanyConfig(): CompanyConfig {
+  return cachedConfig || DEFAULT_CONFIG;
+}
+
+/**
+ * Clear cached config (call after settings update)
+ */
+export function clearCompanyCache(): void {
+  cachedConfig = null;
+}
+
+// Default export for backward compatibility
+export const company = DEFAULT_CONFIG;

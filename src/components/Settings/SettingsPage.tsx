@@ -1,128 +1,257 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { company } from '../../lib/company';
+import { supabase } from '../../lib/supabase';
+import { clearCompanyCache } from '../../lib/company';
 import {
   CogIcon,
   BuildingOfficeIcon,
   MapPinIcon,
   CurrencyEuroIcon,
   DocumentTextIcon,
-  BellIcon
+  BellIcon,
+  CheckIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
+
+interface CompanySettings {
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  website: string;
+  tax_number: string;
+  registration_number: string;
+}
+
+interface FinancialSettings {
+  currency: string;
+  vat_rate: number;
+  late_return_fee: number;
+  cleaning_fee: number;
+  fuel_charge_per_liter: number;
+}
+
+interface Station {
+  id: string;
+  name: string;
+  name_en: string;
+  address: string;
+  active: boolean;
+}
 
 const SettingsPage: React.FC = () => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('company');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+
+  const [companySettings, setCompanySettings] = useState<CompanySettings>({
+    name: '',
+    address: '',
+    phone: '',
+    email: '',
+    website: '',
+    tax_number: '',
+    registration_number: '',
+  });
+
+  const [stations, setStations] = useState<Station[]>([]);
+
+  const [financialSettings, setFinancialSettings] = useState<FinancialSettings>({
+    currency: 'EUR',
+    vat_rate: 24,
+    late_return_fee: 10,
+    cleaning_fee: 25,
+    fuel_charge_per_liter: 1.5,
+  });
+
+  const loadSettings = useCallback(async () => {
+    if (!supabase) return;
+    setLoading(true);
+    setError('');
+    try {
+      // Load company settings
+      const { data: companyData, error: companyError } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'company')
+        .maybeSingle();
+
+      if (companyError) throw companyError;
+      if (companyData?.value) {
+        const v = companyData.value as Record<string, unknown>;
+        setCompanySettings({
+          name: (v.name as string) || '',
+          address: (v.address as string) || '',
+          phone: (v.phone as string) || '',
+          email: (v.email as string) || '',
+          website: (v.website as string) || '',
+          tax_number: (v.taxNumber as string) || '',
+          registration_number: (v.registrationNumber as string) || '',
+        });
+      }
+
+      // Load financial settings
+      const { data: financialData, error: financialError } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'financial')
+        .maybeSingle();
+
+      if (financialError) throw financialError;
+      if (financialData?.value) {
+        const v = financialData.value as Record<string, unknown>;
+        setFinancialSettings({
+          currency: (v.currency as string) || 'EUR',
+          vat_rate: (v.vat_rate as number) || 24,
+          late_return_fee: (v.late_return_fee as number) || 10,
+          cleaning_fee: (v.cleaning_fee as number) || 25,
+          fuel_charge_per_liter: (v.fuel_charge_per_liter as number) || 1.5,
+        });
+      }
+
+      // Load stations
+      const { data: stationsData, error: stationsError } = await supabase
+        .from('stations')
+        .select('id, name, name_en, address, active')
+        .order('name');
+
+      if (stationsError) throw stationsError;
+      if (stationsData) {
+        setStations(stationsData as Station[]);
+      }
+    } catch (err) {
+      console.error('Failed to load settings:', err);
+      setError('Αποτυχία φόρτωσης ρυθμίσεων.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  const handleSave = async () => {
+    if (!supabase) return;
+    setSaving(true);
+    setError('');
+    setSaved(false);
+    try {
+      // Save company settings
+      const companyPayload = {
+        name: companySettings.name,
+        address: companySettings.address,
+        phone: companySettings.phone,
+        email: companySettings.email,
+        website: companySettings.website,
+        taxNumber: companySettings.tax_number,
+        registrationNumber: companySettings.registration_number,
+      };
+
+      const { error: companyError } = await supabase
+        .from('settings')
+        .upsert(
+          { key: 'company', value: companyPayload, updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        );
+
+      if (companyError) throw companyError;
+
+      // Save financial settings
+      const { error: financialError } = await supabase
+        .from('settings')
+        .upsert(
+          { key: 'financial', value: financialSettings, updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        );
+
+      if (financialError) throw financialError;
+
+      setSaved(true);
+      clearCompanyCache(); // Clear cache so other components refetch
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+      setError('Αποτυχία αποθήκευσης ρυθμίσεων.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const tabs = [
     { id: 'company', label: 'Εταιρικά Στοιχεία', icon: BuildingOfficeIcon },
     { id: 'stations', label: 'Σταθμοί', icon: MapPinIcon },
     { id: 'financial', label: 'Οικονομικά', icon: CurrencyEuroIcon },
     { id: 'documents', label: 'Έγγραφα', icon: DocumentTextIcon },
-    { id: 'notifications', label: 'Ειδοποιήσεις', icon: BellIcon }
+    { id: 'notifications', label: 'Ειδοποιήσεις', icon: BellIcon },
   ];
-
-  const [companySettings, setCompanySettings] = useState({
-    name: company.name,
-    address: company.address,
-    phone: company.phone,
-    email: company.email,
-    website: company.website,
-    tax_number: company.taxNumber,
-    registration_number: company.registrationNumber
-  });
-
-  const [stations, setStations] = useState([
-    { id: '1', name: 'Πλατανιάς', name_en: 'Platanias', address: 'Πλατανιάς, Χανιά', active: true },
-    { id: '2', name: 'Αγία Μαρίνα', name_en: 'Agia Marina', address: 'Αγία Μαρίνα, Χανιά', active: true },
-    { id: '3', name: 'Αεροδρόμιο', name_en: 'Airport', address: 'Αεροδρόμιο Χανίων', active: true }
-  ]);
-
-  const [financialSettings, setFinancialSettings] = useState({
-    currency: 'EUR',
-    vat_rate: 24,
-    late_return_fee: 10,
-    cleaning_fee: 25,
-    fuel_charge_per_liter: 1.5
-  });
 
   const renderCompanySettings = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Επωνυμία Εταιρείας
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Επωνυμία Εταιρείας</label>
           <input
             type="text"
             value={companySettings.name}
-            onChange={(e) => setCompanySettings(prev => ({ ...prev, name: e.target.value }))}
+            onChange={(e) => setCompanySettings((prev) => ({ ...prev, name: e.target.value }))}
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            ΑΦΜ
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">ΑΦΜ</label>
           <input
             type="text"
             value={companySettings.tax_number}
-            onChange={(e) => setCompanySettings(prev => ({ ...prev, tax_number: e.target.value }))}
+            onChange={(e) => setCompanySettings((prev) => ({ ...prev, tax_number: e.target.value }))}
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Διεύθυνση
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Διεύθυνση</label>
           <input
             type="text"
             value={companySettings.address}
-            onChange={(e) => setCompanySettings(prev => ({ ...prev, address: e.target.value }))}
+            onChange={(e) => setCompanySettings((prev) => ({ ...prev, address: e.target.value }))}
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Τηλέφωνο
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Τηλέφωνο</label>
           <input
             type="text"
             value={companySettings.phone}
-            onChange={(e) => setCompanySettings(prev => ({ ...prev, phone: e.target.value }))}
+            onChange={(e) => setCompanySettings((prev) => ({ ...prev, phone: e.target.value }))}
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
           <input
             type="email"
             value={companySettings.email}
-            onChange={(e) => setCompanySettings(prev => ({ ...prev, email: e.target.value }))}
+            onChange={(e) => setCompanySettings((prev) => ({ ...prev, email: e.target.value }))}
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Website
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Website</label>
           <input
             type="text"
             value={companySettings.website}
-            onChange={(e) => setCompanySettings(prev => ({ ...prev, website: e.target.value }))}
+            onChange={(e) => setCompanySettings((prev) => ({ ...prev, website: e.target.value }))}
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Αριθμός Μητρώου
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Αριθμός Μητρώου</label>
           <input
             type="text"
             value={companySettings.registration_number}
-            onChange={(e) => setCompanySettings(prev => ({ ...prev, registration_number: e.target.value }))}
+            onChange={(e) => setCompanySettings((prev) => ({ ...prev, registration_number: e.target.value }))}
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -134,62 +263,64 @@ const SettingsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium text-gray-900">Σταθμοί Παραλαβής/Παράδοσης</h3>
-        <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-          Νέος Σταθμός
-        </button>
       </div>
-      
-      <div className="space-y-4">
-        {stations.map((station) => (
-          <div key={station.id} className="border border-gray-200 rounded-lg p-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Όνομα (ΕΛ)
-                </label>
-                <input
-                  type="text"
-                  value={station.name}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Όνομα (EN)
-                </label>
-                <input
-                  type="text"
-                  value={station.name_en}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Διεύθυνση
-                </label>
-                <input
-                  type="text"
-                  value={station.address}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <label className="flex items-center">
+
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <ArrowPathIcon className="h-6 w-6 text-gray-400 animate-spin" />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {stations.map((station) => (
+            <div key={station.id} className="border border-gray-200 rounded-lg p-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Όνομα (ΕΛ)</label>
                   <input
-                    type="checkbox"
-                    checked={station.active}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    type="text"
+                    value={station.name}
+                    readOnly
+                    className="w-full border border-gray-200 rounded-md px-3 py-2 bg-gray-50 text-gray-700"
                   />
-                  <span className="ml-2 text-sm text-gray-700">Ενεργός</span>
-                </label>
-                <button className="text-red-600 hover:text-red-700">
-                  Διαγραφή
-                </button>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Όνομα (EN)</label>
+                  <input
+                    type="text"
+                    value={station.name_en}
+                    readOnly
+                    className="w-full border border-gray-200 rounded-md px-3 py-2 bg-gray-50 text-gray-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Διεύθυνση</label>
+                  <input
+                    type="text"
+                    value={station.address}
+                    readOnly
+                    className="w-full border border-gray-200 rounded-md px-3 py-2 bg-gray-50 text-gray-700"
+                  />
+                </div>
+                <div className="flex items-center">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={station.active}
+                      readOnly
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Ενεργός</span>
+                  </label>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+
+      <p className="text-sm text-gray-500">
+        Οι σταθμοί ενημερώνονται από τη σελίδα Στόλου (απαιτείται επέκταση).
+      </p>
     </div>
   );
 
@@ -197,60 +328,67 @@ const SettingsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Νόμισμα
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Νόμισμα</label>
           <select
             value={financialSettings.currency}
-            onChange={(e) => setFinancialSettings(prev => ({ ...prev, currency: e.target.value }))}
+            onChange={(e) => setFinancialSettings((prev) => ({ ...prev, currency: e.target.value }))}
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="EUR">Euro (€)</option>
-            <option value="USD">US Dollar ($)</option>
+            <option value="EUR">Euro (EUR)</option>
+            <option value="USD">US Dollar (USD)</option>
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            ΦΠΑ (%)
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">ΦΠΑ (%)</label>
           <input
             type="number"
             value={financialSettings.vat_rate}
-            onChange={(e) => setFinancialSettings(prev => ({ ...prev, vat_rate: parseFloat(e.target.value) }))}
+            onChange={(e) =>
+              setFinancialSettings((prev) => ({ ...prev, vat_rate: parseFloat(e.target.value) || 0 }))
+            }
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Χρέωση Καθυστέρησης (€/ώρα)
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Χρέωση Καθυστέρησης (EUR/ώρα)</label>
           <input
             type="number"
             value={financialSettings.late_return_fee}
-            onChange={(e) => setFinancialSettings(prev => ({ ...prev, late_return_fee: parseFloat(e.target.value) }))}
+            onChange={(e) =>
+              setFinancialSettings((prev) => ({
+                ...prev,
+                late_return_fee: parseFloat(e.target.value) || 0,
+              }))
+            }
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Χρέωση Καθαρισμού (€)
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Χρέωση Καθαρισμού (EUR)</label>
           <input
             type="number"
             value={financialSettings.cleaning_fee}
-            onChange={(e) => setFinancialSettings(prev => ({ ...prev, cleaning_fee: parseFloat(e.target.value) }))}
+            onChange={(e) =>
+              setFinancialSettings((prev) => ({
+                ...prev,
+                cleaning_fee: parseFloat(e.target.value) || 0,
+              }))
+            }
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Χρέωση Καυσίμου (€/λίτρο)
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Χρέωση Καυσίμου (EUR/λίτρο)</label>
           <input
             type="number"
             step="0.01"
             value={financialSettings.fuel_charge_per_liter}
-            onChange={(e) => setFinancialSettings(prev => ({ ...prev, fuel_charge_per_liter: parseFloat(e.target.value) }))}
+            onChange={(e) =>
+              setFinancialSettings((prev) => ({
+                ...prev,
+                fuel_charge_per_liter: parseFloat(e.target.value) || 0,
+              }))
+            }
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -285,11 +423,30 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <ArrowPathIcon className="h-8 w-8 text-gray-400 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-gray-900">{t('settings')}</h1>
       </div>
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+      )}
+
+      {saved && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 flex items-center">
+          <CheckIcon className="h-5 w-5 mr-2" />
+          Οι ρυθμίσεις αποθηκεύτηκαν επιτυχώς.
+        </div>
+      )}
 
       <div className="bg-white shadow-sm rounded-lg">
         {/* Tabs */}
@@ -316,15 +473,21 @@ const SettingsPage: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          {renderContent()}
-        </div>
+        <div className="p-6">{renderContent()}</div>
 
         {/* Save Button */}
         <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
-          <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
-            <CogIcon className="h-4 w-4 mr-2" />
-            Αποθήκευση Ρυθμίσεων
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            {saving ? (
+              <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <CogIcon className="h-4 w-4 mr-2" />
+            )}
+            {saving ? 'Αποθήκευση...' : 'Αποθήκευση Ρυθμίσεων'}
           </button>
         </div>
       </div>

@@ -42,12 +42,14 @@ export async function loadCompanyConfig(): Promise<CompanyConfig> {
 
   try {
     if (supabase) {
-      const { data, error } = await supabase.rpc('get_app_setting', {
-        setting_key: 'company',
-      });
+      const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'company')
+        .maybeSingle();
 
       if (!error && data) {
-        const v = data as Record<string, unknown>;
+        const v = (data as { value: Record<string, unknown> }).value;
         cachedConfig = {
           name: (v.name as string) || DEFAULT_CONFIG.name,
           phone: (v.phone as string) || DEFAULT_CONFIG.phone,

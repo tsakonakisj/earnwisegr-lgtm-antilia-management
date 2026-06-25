@@ -72,38 +72,39 @@ const SettingsPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      // Load company settings via RPC (bypasses schema cache)
-      const { data: companyData, error: companyError } = await supabase.rpc('get_app_setting', {
-        setting_key: 'company',
-      });
+      const { data: settingsData, error: settingsError } = await supabase
+        .from('settings')
+        .select('key, value')
+        .in('key', ['company', 'financial']);
 
-      if (!companyError && companyData) {
-        const v = companyData as Record<string, unknown>;
-        setCompanySettings({
-          name: (v.name as string) || '',
-          address: (v.address as string) || '',
-          phone: (v.phone as string) || '',
-          email: (v.email as string) || '',
-          website: (v.website as string) || '',
-          tax_number: (v.taxNumber as string) || '',
-          registration_number: (v.registrationNumber as string) || '',
-        });
-      }
+      if (settingsError) throw settingsError;
 
-      // Load financial settings via RPC
-      const { data: financialData, error: financialError } = await supabase.rpc('get_app_setting', {
-        setting_key: 'financial',
-      });
+      if (settingsData) {
+        const companyRow = settingsData.find((r) => r.key === 'company');
+        if (companyRow?.value) {
+          const v = companyRow.value as Record<string, unknown>;
+          setCompanySettings({
+            name: (v.name as string) || '',
+            address: (v.address as string) || '',
+            phone: (v.phone as string) || '',
+            email: (v.email as string) || '',
+            website: (v.website as string) || '',
+            tax_number: (v.taxNumber as string) || '',
+            registration_number: (v.registrationNumber as string) || '',
+          });
+        }
 
-      if (!financialError && financialData) {
-        const v = financialData as Record<string, unknown>;
-        setFinancialSettings({
-          currency: (v.currency as string) || 'EUR',
-          vat_rate: (v.vat_rate as number) || 24,
-          late_return_fee: (v.late_return_fee as number) || 10,
-          cleaning_fee: (v.cleaning_fee as number) || 25,
-          fuel_charge_per_liter: (v.fuel_charge_per_liter as number) || 1.5,
-        });
+        const financialRow = settingsData.find((r) => r.key === 'financial');
+        if (financialRow?.value) {
+          const v = financialRow.value as Record<string, unknown>;
+          setFinancialSettings({
+            currency: (v.currency as string) || 'EUR',
+            vat_rate: (v.vat_rate as number) || 24,
+            late_return_fee: (v.late_return_fee as number) || 10,
+            cleaning_fee: (v.cleaning_fee as number) || 25,
+            fuel_charge_per_liter: (v.fuel_charge_per_liter as number) || 1.5,
+          });
+        }
       }
 
       // Load stations
@@ -134,7 +135,6 @@ const SettingsPage: React.FC = () => {
     setError('');
     setSaved(false);
     try {
-      // Save company settings via RPC
       const companyPayload = {
         name: companySettings.name,
         address: companySettings.address,
@@ -145,18 +145,16 @@ const SettingsPage: React.FC = () => {
         registrationNumber: companySettings.registration_number,
       };
 
-      const { error: companyError } = await supabase.rpc('save_app_setting', {
-        setting_key: 'company',
-        setting_value: companyPayload,
-      });
+      const { error: companyError } = await supabase
+        .from('settings')
+        .upsert({ key: 'company', value: companyPayload, updated_at: new Date().toISOString() }, { onConflict: 'key' });
 
       if (companyError) throw companyError;
 
-      // Save financial settings via RPC
-      const { error: financialError } = await supabase.rpc('save_app_setting', {
-        setting_key: 'financial',
-        setting_value: financialSettings,
-      });
+      // Save financial settings
+      const { error: financialError } = await supabase
+        .from('settings')
+        .upsert({ key: 'financial', value: financialSettings, updated_at: new Date().toISOString() }, { onConflict: 'key' });
 
       if (financialError) throw financialError;
 

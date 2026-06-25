@@ -1,12 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { company } from '../../lib/company';
+import { loadCompanyConfig } from '../../lib/company';
 import { ChevronDownIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 
 const Header: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
   const { user, logout } = useAuth();
+  const [companyName, setCompanyName] = useState('');
+
+  useEffect(() => {
+    loadCompanyConfig().then((cfg) => setCompanyName(cfg.name));
+
+    const onStorage = () => {
+      loadCompanyConfig().then((cfg) => setCompanyName(cfg.name));
+    };
+    window.addEventListener('company-settings-updated', onStorage);
+    return () => window.removeEventListener('company-settings-updated', onStorage);
+  }, []);
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -14,7 +25,7 @@ const Header: React.FC = () => {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <h1 className="text-xl font-bold text-blue-600">{company.name}</h1>
+              <h1 className="text-xl font-bold text-blue-600">{companyName}</h1>
             </div>
           </div>
           

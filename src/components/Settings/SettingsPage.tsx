@@ -160,6 +160,7 @@ const SettingsPage: React.FC = () => {
 
       setSaved(true);
       clearCompanyCache();
+      window.dispatchEvent(new Event('company-settings-updated'));
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       console.error('Failed to save settings:', err);

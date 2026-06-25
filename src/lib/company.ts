@@ -42,8 +42,8 @@ export async function loadCompanyConfig(): Promise<CompanyConfig> {
 
   try {
     if (supabase) {
-      const { data, error } = await supabase.rpc('get_setting', {
-        p_key: 'company',
+      const { data, error } = await supabase.rpc('get_app_setting', {
+        setting_key: 'company',
       });
 
       if (!error && data) {

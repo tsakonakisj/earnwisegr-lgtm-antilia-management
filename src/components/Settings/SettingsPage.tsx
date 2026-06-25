@@ -73,8 +73,8 @@ const SettingsPage: React.FC = () => {
     setError('');
     try {
       // Load company settings via RPC (bypasses schema cache)
-      const { data: companyData, error: companyError } = await supabase.rpc('get_setting', {
-        p_key: 'company',
+      const { data: companyData, error: companyError } = await supabase.rpc('get_app_setting', {
+        setting_key: 'company',
       });
 
       if (!companyError && companyData) {
@@ -91,8 +91,8 @@ const SettingsPage: React.FC = () => {
       }
 
       // Load financial settings via RPC
-      const { data: financialData, error: financialError } = await supabase.rpc('get_setting', {
-        p_key: 'financial',
+      const { data: financialData, error: financialError } = await supabase.rpc('get_app_setting', {
+        setting_key: 'financial',
       });
 
       if (!financialError && financialData) {
@@ -145,17 +145,17 @@ const SettingsPage: React.FC = () => {
         registrationNumber: companySettings.registration_number,
       };
 
-      const { error: companyError } = await supabase.rpc('save_setting', {
-        p_key: 'company',
-        p_value: companyPayload,
+      const { error: companyError } = await supabase.rpc('save_app_setting', {
+        setting_key: 'company',
+        setting_value: companyPayload,
       });
 
       if (companyError) throw companyError;
 
       // Save financial settings via RPC
-      const { error: financialError } = await supabase.rpc('save_setting', {
-        p_key: 'financial',
-        p_value: financialSettings,
+      const { error: financialError } = await supabase.rpc('save_app_setting', {
+        setting_key: 'financial',
+        setting_value: financialSettings,
       });
 
       if (financialError) throw financialError;

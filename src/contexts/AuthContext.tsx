@@ -18,34 +18,47 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Auto-login with demo user for this internal app
       try {
         if (supabase) {
+          // Try manager first, then any active user
           const { data: userData } = await supabase
             .from('users')
             .select('*')
-            .eq('email', company.demoEmail)
+            .eq('email', 'manager@antilia.com')
             .maybeSingle();
 
           if (userData) {
             setUser(userData);
-          } else {
-            // Fallback: try to get any active user
-            const { data: anyUser } = await supabase
-              .from('users')
-              .select('*')
-              .eq('active', true)
-              .limit(1)
-              .maybeSingle();
+            setLoading(false);
+            return;
+          }
 
-            if (anyUser) {
-              setUser(anyUser);
-            }
+          const { data: anyUser } = await supabase
+            .from('users')
+            .select('*')
+            .eq('active', true)
+            .limit(1)
+            .maybeSingle();
+
+          if (anyUser) {
+            setUser(anyUser);
+            setLoading(false);
+            return;
           }
         }
       } catch {
-        // Ignore errors, user stays null
+        // ignore
       }
+
+      // Fallback: use a default admin so the app is always accessible
+      setUser({
+        id: 'default',
+        name: 'Διαχειριστής',
+        email: 'admin@system.local',
+        role: 'admin',
+        active: true,
+        created_at: new Date().toISOString(),
+      } as any);
       setLoading(false);
     };
 

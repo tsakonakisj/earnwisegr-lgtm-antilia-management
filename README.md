@@ -155,5 +155,5 @@ For setup assistance or customization:
 - 99.9% uptime guarantee
 
 ---
-TEST JULY 2026
+
 **Ready to modernize your car rental business?** This system provides everything you need to manage bookings, fleet, customers, and generate professional contracts - all in one integrated solution.
